@@ -133,11 +133,6 @@ document.getElementById('import-form').addEventListener('submit', async (e) => {
     const tagsInput = document.getElementById('import-tags');
     const submitBtn = document.getElementById('import-submit-btn');
 
-    if (!htmlInput.files[0]) {
-        showToast('Vui lòng chọn file HTML', 'error');
-        return;
-    }
-
     // Show loading state
     submitBtn.querySelector('.btn-text').classList.add('hidden');
     submitBtn.querySelector('.btn-loading').classList.remove('hidden');
