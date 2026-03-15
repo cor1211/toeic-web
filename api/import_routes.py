@@ -58,7 +58,7 @@ async def import_exam(
         logger.error("Parsing failed: %s", str(exc), exc_info=True)
         raise HTTPException(status_code=422, detail=f"Parsing error: {str(exc)}")
 
-    exam_title = title or parsed.title or html_file.filename or "Untitled Exam"
+    exam_title = title or parsed.title or html_filename or "Untitled Exam"
     slug = _slugify(exam_title)
 
     # --- Save audio via Storage Abstraction ---
@@ -89,7 +89,7 @@ async def import_exam(
         exam_db = await repo.create_exam(
             title=exam_title,
             slug=slug,
-            source_html_path=html_file.filename or "exam.html", 
+            source_html_path=html_filename or "exam.html", 
             audio_local_path=audio_store_path,
             question_count=parsed.question_count,
             tags=tags,
