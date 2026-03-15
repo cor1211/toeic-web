@@ -14,12 +14,15 @@ engine_args = {
 }
 
 if DATABASE_URL.startswith("postgresql"):
-    # Postgres specific tuning for Render/Supabase
+    # Postgres specific tuning for Render/Supabase (Pgbouncer compatibility)
     engine_args.update({
         "pool_size": 10,
         "max_overflow": 20,
         "pool_recycle": 1800,
         "pool_pre_ping": True,
+        "connect_args": {
+            "prepared_statement_cache_size": 0,
+        }
     })
 
 engine = create_async_engine(DATABASE_URL, **engine_args)
