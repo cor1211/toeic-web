@@ -54,8 +54,16 @@ async def upload_file(
             
             # Get public URL
             url_resp = _supabase.storage.from_(SUPABASE_BUCKET).get_public_url(path_on_bucket)
-            # url_resp might be a string or an object depending on version
-            url = url_resp if isinstance(url_resp, str) else getattr(url_resp, "url", str(url_resp))
+            
+            # Robustly extract the URL string
+            if isinstance(url_resp, str):
+                url = url_resp
+            elif hasattr(url_resp, "public_url"):
+                url = url_resp.public_url
+            elif hasattr(url_resp, "url"):
+                url = url_resp.url
+            else:
+                url = str(url_resp)
             
             logger.info("Cloud upload successful: %s", url)
             return url
