@@ -45,6 +45,9 @@ class ExamDB(Base):
     media_assets: Mapped[list["MediaAssetDB"]] = relationship(
         back_populates="exam", cascade="all, delete-orphan", lazy="selectin",
     )
+    attempts: Mapped[list["AttemptDB"]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin",
+    )
 
 
 class ExamSectionDB(Base):

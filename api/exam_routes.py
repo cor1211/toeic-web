@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.schemas import ExamDetail, ExamListItem, QuestionOut, SectionOut
 from infrastructure.database import get_session
 from infrastructure.repositories import ExamRepository
+from infrastructure.storage import delete_file
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/exams", tags=["Exams"])
 
 
@@ -104,10 +107,39 @@ async def delete_exam(
     exam_id: int,
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    """Delete an exam and all related data."""
+    """Delete an exam and all related data (DB + Files)."""
+    logger.info("Deleting exam ID: %d", exam_id)
     repo = ExamRepository(session)
-    deleted = await repo.delete_exam(exam_id)
-    if not deleted:
+    
+    # Reload exam to get file paths before deletion
+    exam = await repo.get_exam(exam_id)
+    if exam is None:
+        logger.warning("Exam %d not found for deletion", exam_id)
         raise HTTPException(status_code=404, detail="Exam not found")
-    await session.commit()
-    return {"deleted": True, "exam_id": exam_id}
+
+    # Collect assets to delete
+    assets_to_delete = []
+    if exam.audio_local_path:
+        assets_to_delete.append(exam.audio_local_path)
+    
+    # We might want to delete images too, but that's more complex since images can be shared.
+    # For now, let's at least handle the audio.
+    
+    try:
+        # Delete from DB (this will cascade to sections, questions, etc.)
+        deleted = await repo.delete_exam(exam_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Exam not found")
+        
+        await session.commit()
+        logger.info("Exam %d deleted from database", exam_id)
+        
+        # Then clean up files (best effort)
+        for asset in assets_to_delete:
+            await delete_file(asset)
+            
+        return {"deleted": True, "exam_id": exam_id}
+    except Exception as e:
+        logger.error("Failed to delete exam %d: %s", exam_id, str(e), exc_info=True)
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

@@ -86,6 +86,36 @@ async def upload_file(
             logger.error("Local upload failed for %s: %s", filename, str(e), exc_info=True)
             raise
 
+async def delete_file(path_or_url: str) -> None:
+    """Delete a file from storage (local or cloud)."""
+    if not path_or_url: return
+    
+    logger.info("Deleting file: %s (Mode: %s)", path_or_url, STORAGE_MODE)
+    
+    if STORAGE_MODE == "CLOUD":
+        if not _supabase: return
+        # Extract path from URL: .../bucket_name/folder/filename
+        # Example: https://.../toeic-assets/images/abc.jpg -> images/abc.jpg
+        try:
+            if SUPABASE_BUCKET in path_or_url:
+                path_on_bucket = path_or_url.split(f"{SUPABASE_BUCKET}/")[-1]
+                logger.debug("Extracted bucket path for deletion: %s", path_on_bucket)
+                _supabase.storage.from_(SUPABASE_BUCKET).remove([path_on_bucket])
+                logger.info("Cloud deletion successful: %s", path_on_bucket)
+        except Exception as e:
+            logger.warning("Cloud deletion failed for %s: %s", path_or_url, str(e))
+    else:
+        # Local deletion
+        try:
+            # path_or_url is like "/uploads/images/abc.jpg"
+            rel_path = path_or_url.lstrip("/")
+            full_path = Path(os.getcwd()) / rel_path
+            if full_path.exists():
+                full_path.unlink()
+                logger.info("Local deletion successful: %s", full_path)
+        except Exception as e:
+            logger.warning("Local deletion failed for %s: %s", path_or_url, str(e))
+
 def _get_content_type(filename: str) -> str:
     """Simple helper to guess content type from extension."""
     ext = Path(filename).suffix.lower()
