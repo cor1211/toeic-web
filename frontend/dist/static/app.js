@@ -47,6 +47,31 @@ function openLightbox(src) {
 function closeLightbox() {
     document.getElementById('lightbox').classList.add('hidden');
 }
+function closeImportModal() {
+    document.getElementById('import-modal').classList.add('hidden');
+    // Reset form
+    document.getElementById('import-form').reset();
+    clearFile('html');
+    clearFile('audio');
+    document.getElementById('import-html-pasted').value = '';
+    switchImportTab('file');
+}
+
+function switchImportTab(tab) {
+    const fileZone = document.getElementById('html-drop-zone');
+    const pasteZone = document.getElementById('html-paste-zone');
+    const tabs = document.querySelectorAll('.import-tab');
+
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+
+    if (tab === 'file') {
+        fileZone.classList.remove('hidden');
+        pasteZone.classList.add('hidden');
+    } else {
+        fileZone.classList.add('hidden');
+        pasteZone.classList.remove('hidden');
+    }
+}
 
 // Close lightbox on Escape
 document.addEventListener('keydown', (e) => {
@@ -119,8 +144,17 @@ document.getElementById('import-form').addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
 
     try {
+        const htmlFile = htmlInput.files[0];
+        const htmlContent = document.getElementById('import-html-pasted').value;
+
+        if (!htmlFile && !htmlContent.trim()) {
+            showToast('Vui lòng chọn file HTML hoặc dán nội dung', 'error');
+            return;
+        }
+
         const result = await api.importExam(
-            htmlInput.files[0],
+            htmlFile || null,
+            htmlContent,
             audioInput.files[0] || null,
             tagsInput.value,
         );

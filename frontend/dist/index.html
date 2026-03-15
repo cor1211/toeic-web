@@ -40,9 +40,15 @@
                 </div>
                 <form id="import-form" class="import-form">
                     <div class="form-group">
-                        <label for="import-html">File HTML bài thi <span class="required">*</span></label>
+                        <label>Nguồn nội dung HTML <span class="required">*</span></label>
+                        <div class="import-tabs">
+                            <button type="button" class="import-tab active" data-tab="file" onclick="switchImportTab('file')">📁 Upload File</button>
+                            <button type="button" class="import-tab" data-tab="paste" onclick="switchImportTab('paste')">📝 Paste HTML</button>
+                        </div>
+
+                        <!-- Tab: File Upload -->
                         <div class="file-drop-zone" id="html-drop-zone">
-                            <input type="file" id="import-html" accept=".html,.htm,.txt" required>
+                            <input type="file" id="import-html" accept=".html,.htm,.txt">
                             <div class="drop-zone-content">
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 <p>Kéo thả file HTML vào đây</p>
@@ -52,6 +58,11 @@
                                 <span class="file-name"></span>
                                 <button type="button" class="btn-icon btn-sm" onclick="clearFile('html')">✕</button>
                             </div>
+                        </div>
+
+                        <!-- Tab: Paste HTML -->
+                        <div id="html-paste-zone" class="hidden">
+                            <textarea id="import-html-pasted" class="form-textarea" placeholder="Dán nội dung HTML từ course online vào đây..."></textarea>
                         </div>
                     </div>
                     <div class="form-group">

@@ -11,9 +11,10 @@ const api = {
      * @param {string} tags
      * @returns {Promise<Object>}
      */
-    async importExam(htmlFile, audioFile = null, tags = '') {
+    async importExam(htmlFile = null, htmlContent = '', audioFile = null, tags = '') {
         const form = new FormData();
-        form.append('html_file', htmlFile);
+        if (htmlFile) form.append('html_file', htmlFile);
+        form.append('html_content_pasted', htmlContent);
         if (audioFile) form.append('audio_file', audioFile);
         form.append('tags', tags);
         const res = await fetch(`${API_BASE}/imports/exams`, { method: 'POST', body: form });

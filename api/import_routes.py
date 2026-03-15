@@ -30,18 +30,28 @@ def _slugify(text: str) -> str:
 
 @router.post("/exams", response_model=ImportResult)
 async def import_exam(
-    html_file: UploadFile = File(...),
+    html_file: UploadFile | None = File(default=None),
+    html_content_pasted: str = Form(default=""),
     audio_file: UploadFile | None = File(default=None),
     title: str = Form(default=""),
     tags: str = Form(default=""),
     session: AsyncSession = Depends(get_session),
 ) -> ImportResult:
-    """Import a TOEIC exam from an NN24H HTML file."""
-    logger.info("Starting exam import: %s", html_file.filename)
+    """Import a TOEIC exam from an NN24H HTML file or pasted content."""
     
     # --- Read & parse HTML ---
-    try:
+    if html_content_pasted.strip():
+        logger.info("Starting exam import: Pasted HTML content")
+        html_content = html_content_pasted
+        html_filename = "pasted_exam.html"
+    elif html_file and html_file.filename:
+        logger.info("Starting exam import: File %s", html_file.filename)
         html_content = (await html_file.read()).decode("utf-8", errors="replace")
+        html_filename = html_file.filename
+    else:
+        raise HTTPException(status_code=400, detail="Either html_file or html_content_pasted must be provided.")
+
+    try:
         parsed = parse_nn24h_html(html_content)
         logger.info("HTML parsed: %s questions found", parsed.question_count)
     except Exception as exc:
