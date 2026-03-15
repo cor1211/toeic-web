@@ -40,17 +40,15 @@ async def upload_file(
         path_on_bucket = f"{folder}/{filename}"
         try:
             logger.debug("Attempting Supabase upload: %s", path_on_bucket)
-            # Use BytesIO to ensure compatibility with Supabase SDK
-            file_object = io.BytesIO(content)
             
-            # Note: upload might fail if file exists, so we use upsert=True if supported 
-            # or just handle the error.
-            res = _supabase.storage.from_(SUPABASE_BUCKET).upload(
+            # The Supabase SDK expects bytes, str, or PathLike for the 'file' argument.
+            # We also use 'upsert=True' to overwrite existing files.
+            _supabase.storage.from_(SUPABASE_BUCKET).upload(
                 path=path_on_bucket,
-                file=file_object,
+                file=content,
                 file_options={
                     "content-type": _get_content_type(filename),
-                    "x-upsert": "true" # Custom flag some SDKs use or just handle error
+                    "upsert": "true"
                 }
             )
             
