@@ -18,6 +18,13 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+function resolveMediaUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    // Prepend slash for local paths
+    return path.startsWith('/') ? path : `/${path}`;
+}
+
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');

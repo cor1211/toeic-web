@@ -83,7 +83,7 @@ async function renderReviewPage({ id, attemptId }) {
                     <div class="audio-player-bar" style="margin-bottom:20px">
                         <span style="font-size:13px;color:var(--text-muted);white-space:nowrap">🔊 Audio:</span>
                         <audio controls preload="auto" style="flex:1;height:36px">
-                            <source src="/${exam.audio_local_path}" type="audio/mpeg">
+                            <source src="${resolveMediaUrl(exam.audio_local_path)}" type="audio/mpeg">
                         </audio>
                     </div>
                 ` : ''}
@@ -133,7 +133,7 @@ async function renderReviewPage({ id, attemptId }) {
 
                                 ${q.image_url ? `
                                     <div class="question-image" style="text-align:left">
-                                        <img src="${q.image_local_path ? '/' + q.image_local_path : q.image_url}"
+                                        <img src="${resolveMediaUrl(q.image_local_path || q.image_url)}"
                                              alt="Q${q.order_index}" style="max-height:300px"
                                              onclick="openLightbox(this.src)" loading="lazy">
                                     </div>

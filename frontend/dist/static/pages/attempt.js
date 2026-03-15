@@ -65,7 +65,7 @@ function renderAttemptUI() {
                         <div class="audio-player-bar">
                             <span style="font-size:13px;color:var(--text-muted);white-space:nowrap">🔊 Audio:</span>
                             <audio id="exam-audio" controls preload="auto" style="flex:1;height:36px">
-                                <source src="/${exam.audio_local_path}" type="audio/mpeg">
+                                <source src="${resolveMediaUrl(exam.audio_local_path)}" type="audio/mpeg">
                             </audio>
                         </div>
                     ` : ''}
@@ -124,7 +124,7 @@ function renderCurrentQuestion() {
 
         ${q.image_url ? `
             <div class="question-image">
-                <img src="${q.image_local_path ? '/' + q.image_local_path : q.image_url}"
+                <img src="${resolveMediaUrl(q.image_local_path || q.image_url)}"
                      alt="Question ${q.order_index}"
                      onclick="openLightbox(this.src)"
                      loading="lazy">
