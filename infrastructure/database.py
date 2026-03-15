@@ -21,7 +21,7 @@ if DATABASE_URL.startswith("postgresql"):
         "pool_recycle": 1800,
         "pool_pre_ping": True,
         "connect_args": {
-            "prepared_statement_cache_size": 0,
+            "statement_cache_size": 0,
         }
     })
 
