@@ -94,4 +94,77 @@ const api = {
         });
         return res.json();
     },
+
+    /** Create a flashcard from manual input. */
+    async createFlashcard(payload) {
+        const res = await fetch(`${API_BASE}/flashcards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Flashcard create failed');
+        return res.json();
+    },
+
+    /** Create a flashcard from selected text in review. */
+    async createFlashcardFromSelection(payload) {
+        const res = await fetch(`${API_BASE}/flashcards/from-selection`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Flashcard selection create failed');
+        return res.json();
+    },
+
+    /** List flashcards with optional filters. */
+    async listFlashcards(filters = {}) {
+        const params = new URLSearchParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '' || value === false) return;
+            params.set(key, value);
+        });
+        const query = params.toString();
+        const res = await fetch(`${API_BASE}/flashcards${query ? `?${query}` : ''}`);
+        if (!res.ok) throw new Error('Failed to load flashcards');
+        return res.json();
+    },
+
+    /** Update an existing flashcard. */
+    async updateFlashcard(flashcardId, payload) {
+        const res = await fetch(`${API_BASE}/flashcards/${flashcardId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Flashcard update failed');
+        return res.json();
+    },
+
+    /** Delete a flashcard. */
+    async deleteFlashcard(flashcardId) {
+        const res = await fetch(`${API_BASE}/flashcards/${flashcardId}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Flashcard delete failed');
+        return res.json();
+    },
+
+    /** List due flashcards. */
+    async listDueFlashcards(limit = 20) {
+        const res = await fetch(`${API_BASE}/flashcards/review/due?limit=${limit}`);
+        if (!res.ok) throw new Error('Failed to load due flashcards');
+        return res.json();
+    },
+
+    /** Submit a flashcard review result. */
+    async reviewFlashcard(flashcardId, result) {
+        const res = await fetch(`${API_BASE}/flashcards/${flashcardId}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ result }),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail || 'Flashcard review failed');
+        return res.json();
+    },
 };

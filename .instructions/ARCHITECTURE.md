@@ -10,15 +10,15 @@
 
 ## 2. Clean Architecture
 - `domain`
-  - Business entities: `Exam`, `ExamSection`, `Question`, `Choice`, `MediaAsset`, `Attempt`, `AttemptAnswer`, `StudyNote`, `Bookmark`, `ReviewTag`.
+  - Business entities: `Exam`, `ExamSection`, `Question`, `Choice`, `MediaAsset`, `Attempt`, `AttemptAnswer`, `StudyNote`, `Bookmark`, `ReviewTag`, `Flashcard`.
 - `use_cases`
-  - `ImportExamFromHtml`, `ListExams`, `GetExamDetail`, `CreateAttempt`, `SaveAttemptProgress`, `SubmitAttempt`, `SaveQuestionNote`, `ToggleBookmark`.
+  - `ImportExamFromHtml`, `ListExams`, `GetExamDetail`, `CreateAttempt`, `SaveAttemptProgress`, `SubmitAttempt`, `SaveQuestionNote`, `ToggleBookmark`, `CreateFlashcard`, `CreateFlashcardFromSelection`, `ListFlashcards`, `ReviewFlashcard`.
 - `infrastructure`
-  - SQLite repositories, file storage, NN24H HTML parser, DTO mappers.
+  - SQLite repositories, file storage, NN24H HTML parser, DTO mappers, flashcard scheduler.
 - `api`
-  - REST endpoints cho import, exam library, attempt lifecycle, notes, bookmarks.
+  - REST endpoints cho import, exam library, attempt lifecycle, notes, bookmarks, flashcards.
 - `ui`
-  -  app cho `Exam Library`, `Attempt Mode`, `Review Workspace`.
+  -  app cho `Exam Library`, `Attempt Mode`, `Review Workspace`, `Flashcard Workspace`.
 
 ## 3. Data Flow
 1. User upload `html_file` va `audio_file` trong UI.
@@ -27,6 +27,7 @@
 4. Import use case chuan hoa du lieu va ghi vao SQLite.
 5. UI doc du lieu tu API de hien thi thu vien de, cho phep lam bai, nop bai va review.
 6. Attempt, note, bookmark va cac tag on tap duoc luu lai de phuc vu hoc tap lan sau.
+7. Flashcard co the duoc tao tu prompt, choice, explanation, note, hoac tao tay; du lieu review duoc cap nhat theo lich spaced repetition.
 
 ## 4. Storage Layout
 - `data/app.db`: SQLite database.
@@ -55,6 +56,8 @@
   - `id`, `question_id`, `created_at`.
 - Table `review_tags`
   - `id`, `question_id`, `tag`, `created_at`.
+- Table `flashcards`
+  - `id`, `term`, `meaning`, `example`, `source_type`, `source_exam_id`, `source_question_id`, `source_part`, `tags_csv`, `deck_name`, `next_review_at`, `interval_days`, `ease_factor`, `repetition`, `last_result`, `created_at`, `updated_at`.
 
 ## 6. API Surface
 - `POST /imports/exams`
@@ -66,6 +69,13 @@
 - `POST /attempts/{attempt_id}/submit`
 - `POST /questions/{question_id}/notes`
 - `POST /questions/{question_id}/bookmark`
+- `POST /flashcards`
+- `GET /flashcards`
+- `PATCH /flashcards/{flashcard_id}`
+- `DELETE /flashcards/{flashcard_id}`
+- `POST /flashcards/from-selection`
+- `GET /flashcards/review/due`
+- `POST /flashcards/{flashcard_id}/review`
 
 ## 7. UI Modules
 - `Exam Library`
@@ -74,9 +84,26 @@
   - Audio player, question navigator, answer sheet, flag cau kho, autosave progress.
 - `Review Workspace`
   - Ket qua dung/sai, explanation, note, bookmark, filter `sai`, `can on`, `da note`.
+- `Flashcard Workspace`
+  - Tao flashcard nhanh tu text duoc chon trong review.
+  - Quan ly deck, tag, nguon cau hoi, va danh sach thẻ.
+  - Study mode cho due cards voi ket qua `again`, `hard`, `good`, `easy`.
 
 ## 8. Parser Strategy
 - Parser v1 chi nham toi cau truc HTML NN24H hien tai.
 - Nguon du lieu uu tien la HTML da render san, khong phu thuoc vao API web goc.
 - Loai bo script/style/noise de tranh duplicate question block.
 - Neu HTML khong chua audio URL thi van import thanh cong vi audio luon duoc user upload rieng.
+
+## 9. Part 1 Learning Enhancements
+- Audio shortcut toan cuc duoc dang ky tai frontend helper dung chung cho Attempt va Review.
+- Khi audio player ton tai:
+  - `Space`: play/pause.
+  - `ArrowLeft` / `ArrowRight`: tua lui/tien 5 giay.
+  - Trong Attempt, dieu huong cau hoi chuyen sang `Alt + ArrowLeft` / `Alt + ArrowRight`.
+- Shortcut bi vo hieu hoa khi user dang go vao `input`, `textarea`, hoac `contenteditable`.
+- Flashcard scheduling su dung SM-2 lite:
+  - `again`: reset repetition, interval 1 ngay.
+  - `hard`: tang interval nhe, giam ease factor nhe.
+  - `good`: tang repetition va interval theo ease factor.
+  - `easy`: tang manh hon va tang ease factor.

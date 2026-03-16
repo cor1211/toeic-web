@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.attempt_routes import router as attempt_router
 from api.exam_routes import router as exam_router
+from api.flashcard_routes import router as flashcard_router
 from api.import_routes import router as import_router
 from api.study_routes import router as study_router
 from config import API_PREFIX, DATA_DIR, UPLOAD_AUDIO_DIR, UPLOAD_IMAGES_DIR
@@ -50,6 +51,7 @@ app.include_router(import_router, prefix=API_PREFIX)
 app.include_router(exam_router, prefix=API_PREFIX)
 app.include_router(attempt_router, prefix=API_PREFIX)
 app.include_router(study_router, prefix=API_PREFIX)
+app.include_router(flashcard_router, prefix=API_PREFIX)
 
 # --- Static file serving for uploaded media ---
 UPLOAD_IMAGES_DIR.mkdir(parents=True, exist_ok=True)

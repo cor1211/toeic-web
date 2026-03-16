@@ -23,6 +23,7 @@ const router = {
         // Try exact match first
         if (this.routes[hash]) {
             this.currentPage = hash;
+            window.clearActivePageBindings?.();
             this.routes[hash]();
             this._updateNav(hash);
             return;
@@ -45,6 +46,7 @@ const router = {
             }
             if (match) {
                 this.currentPage = pattern;
+                window.clearActivePageBindings?.();
                 handler(params);
                 this._updateNav(pattern);
                 return;

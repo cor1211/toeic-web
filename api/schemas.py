@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -157,3 +157,72 @@ class NoteOut(BaseModel):
 class BookmarkOut(BaseModel):
     question_id: int
     is_bookmarked: bool
+
+
+# ---------------------------------------------------------------------------
+# Flashcards
+# ---------------------------------------------------------------------------
+
+FlashcardSourceType = Literal["question_prompt", "choice", "explanation", "note", "manual"]
+FlashcardReviewResult = Literal["again", "hard", "good", "easy"]
+
+
+class FlashcardCreateIn(BaseModel):
+    term: str
+    meaning: str = ""
+    example: str = ""
+    source_type: FlashcardSourceType = "manual"
+    exam_id: Optional[int] = None
+    question_id: Optional[int] = None
+    part: Optional[int] = None
+    tags: list[str] = Field(default_factory=list)
+    deck_name: str = "Default"
+
+
+class FlashcardSelectionIn(BaseModel):
+    selected_text: str
+    context_html: str = ""
+    source_type: FlashcardSourceType
+    exam_id: Optional[int] = None
+    question_id: Optional[int] = None
+    part: Optional[int] = None
+    tags: list[str] = Field(default_factory=list)
+    deck_name: str = "Default"
+    meaning: str = ""
+    example: str = ""
+
+
+class FlashcardUpdateIn(BaseModel):
+    term: Optional[str] = None
+    meaning: Optional[str] = None
+    example: Optional[str] = None
+    source_type: Optional[FlashcardSourceType] = None
+    exam_id: Optional[int] = None
+    question_id: Optional[int] = None
+    part: Optional[int] = None
+    tags: Optional[list[str]] = None
+    deck_name: Optional[str] = None
+
+
+class FlashcardReviewIn(BaseModel):
+    result: FlashcardReviewResult
+
+
+class FlashcardOut(BaseModel):
+    id: int
+    term: str
+    meaning: str
+    example: str
+    source_type: FlashcardSourceType
+    exam_id: Optional[int] = None
+    question_id: Optional[int] = None
+    part: Optional[int] = None
+    tags: list[str] = Field(default_factory=list)
+    deck_name: str
+    next_review_at: datetime
+    interval_days: int
+    ease_factor: float
+    repetition: int
+    last_result: Optional[FlashcardReviewResult] = None
+    created_at: datetime
+    updated_at: datetime

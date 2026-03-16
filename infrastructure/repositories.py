@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from math import ceil
 from typing import Optional, Sequence
 
 from sqlalchemy import select
@@ -16,6 +17,7 @@ from infrastructure.db_models import (
     ChoiceDB,
     ExamDB,
     ExamSectionDB,
+    FlashcardDB,
     MediaAssetDB,
     QuestionDB,
     StudyNoteDB,
@@ -343,3 +345,141 @@ class StudyRepository:
         self._session.add(bookmark)
         await self._session.flush()
         return True
+
+
+class FlashcardRepository:
+    """CRUD operations and scheduling for flashcards."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def create_flashcard(
+        self,
+        *,
+        term: str,
+        meaning: str = "",
+        example: str = "",
+        source_type: str = "manual",
+        source_exam_id: Optional[int] = None,
+        source_question_id: Optional[int] = None,
+        source_part: Optional[int] = None,
+        tags_csv: str = "",
+        deck_name: str = "Default",
+        next_review_at: Optional[datetime] = None,
+    ) -> FlashcardDB:
+        """Create and persist a flashcard."""
+        card = FlashcardDB(
+            term=term,
+            meaning=meaning,
+            example=example,
+            source_type=source_type,
+            source_exam_id=source_exam_id,
+            source_question_id=source_question_id,
+            source_part=source_part,
+            tags_csv=tags_csv,
+            deck_name=deck_name,
+            next_review_at=next_review_at or datetime.utcnow(),
+        )
+        self._session.add(card)
+        await self._session.flush()
+        return card
+
+    async def get_flashcard(self, flashcard_id: int) -> Optional[FlashcardDB]:
+        """Fetch one flashcard by id."""
+        result = await self._session.execute(
+            select(FlashcardDB).where(FlashcardDB.id == flashcard_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_flashcards(self) -> Sequence[FlashcardDB]:
+        """List flashcards ordered by most recently updated."""
+        result = await self._session.execute(
+            select(FlashcardDB).order_by(FlashcardDB.updated_at.desc(), FlashcardDB.id.desc())
+        )
+        return result.scalars().all()
+
+    async def list_due_flashcards(self, limit: int = 20) -> Sequence[FlashcardDB]:
+        """List due flashcards ordered by due time."""
+        now = datetime.utcnow()
+        result = await self._session.execute(
+            select(FlashcardDB)
+            .where(FlashcardDB.next_review_at <= now)
+            .order_by(FlashcardDB.next_review_at.asc(), FlashcardDB.updated_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def update_flashcard(self, flashcard: FlashcardDB, **changes: object) -> FlashcardDB:
+        """Apply updates to a flashcard."""
+        for field_name, value in changes.items():
+            setattr(flashcard, field_name, value)
+        flashcard.updated_at = datetime.utcnow()
+        await self._session.flush()
+        return flashcard
+
+    async def delete_flashcard(self, flashcard_id: int) -> bool:
+        """Delete a flashcard by id."""
+        card = await self.get_flashcard(flashcard_id)
+        if card is None:
+            return False
+        await self._session.delete(card)
+        await self._session.flush()
+        return True
+
+    async def review_flashcard(
+        self,
+        flashcard_id: int,
+        result: str,
+    ) -> Optional[FlashcardDB]:
+        """Apply SM-2 lite scheduling to a flashcard."""
+        card = await self.get_flashcard(flashcard_id)
+        if card is None:
+            return None
+
+        repetition, ease_factor, interval_days = _calculate_schedule(
+            repetition=card.repetition,
+            ease_factor=card.ease_factor,
+            interval_days=card.interval_days,
+            result=result,
+        )
+        card.repetition = repetition
+        card.ease_factor = ease_factor
+        card.interval_days = interval_days
+        card.last_result = result
+        card.next_review_at = datetime.utcnow() + timedelta(days=interval_days)
+        card.updated_at = datetime.utcnow()
+        await self._session.flush()
+        return card
+
+
+def _calculate_schedule(
+    *,
+    repetition: int,
+    ease_factor: float,
+    interval_days: int,
+    result: str,
+) -> tuple[int, float, int]:
+    """Return updated repetition, ease factor, and interval."""
+    if result == "again":
+        return 0, max(1.3, ease_factor - 0.2), 1
+
+    if result == "hard":
+        next_repetition = max(1, repetition + 1)
+        next_interval = 2 if interval_days < 2 else ceil(interval_days * 1.2)
+        return next_repetition, max(1.3, ease_factor - 0.15), next_interval
+
+    if result == "good":
+        next_repetition = repetition + 1
+        if next_repetition == 1:
+            return next_repetition, ease_factor, 1
+        if next_repetition == 2:
+            return next_repetition, ease_factor, 3
+        return next_repetition, ease_factor, ceil(interval_days * ease_factor)
+
+    next_repetition = repetition + 1
+    next_ease_factor = ease_factor + 0.15
+    if next_repetition == 1:
+        return next_repetition, next_ease_factor, 3
+    if next_repetition == 2:
+        return next_repetition, next_ease_factor, 6
+    return next_repetition, next_ease_factor, ceil(interval_days * next_ease_factor * 1.3)

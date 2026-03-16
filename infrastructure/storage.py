@@ -6,7 +6,16 @@ import aiofiles
 import io
 from pathlib import Path
 from typing import Optional
-from supabase import create_client, Client
+
+try:
+    from supabase import Client, create_client
+except ModuleNotFoundError:  # pragma: no cover - optional dependency fallback
+    Client = object  # type: ignore[assignment]
+
+    def create_client(*args, **kwargs):  # type: ignore[no-untyped-def]
+        """Fallback helper when Supabase SDK is unavailable."""
+        raise ModuleNotFoundError("supabase package is required for CLOUD storage mode")
+
 from config import STORAGE_MODE, SUPABASE_URL, SUPABASE_KEY, SUPABASE_BUCKET, UPLOAD_AUDIO_DIR, UPLOAD_IMAGES_DIR
 
 logger = logging.getLogger(__name__)

@@ -202,3 +202,40 @@ class ReviewTagDB(Base):
     question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"), nullable=False)
     tag: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class FlashcardDB(Base):
+    """Study flashcard with spaced repetition scheduling metadata."""
+
+    __tablename__ = "flashcards"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    term: Mapped[str] = mapped_column(String(500), nullable=False)
+    meaning: Mapped[str] = mapped_column(Text, default="")
+    example: Mapped[str] = mapped_column(Text, default="")
+    source_type: Mapped[str] = mapped_column(String(50), default="manual")
+    source_exam_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_question_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_part: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tags_csv: Mapped[str] = mapped_column(String(1000), default="")
+    deck_name: Mapped[str] = mapped_column(String(200), default="Default")
+    next_review_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        server_default=func.now(),
+    )
+    interval_days: Mapped[int] = mapped_column(Integer, default=0)
+    ease_factor: Mapped[float] = mapped_column(Float, default=2.5)
+    repetition: Mapped[int] = mapped_column(Integer, default=0)
+    last_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        server_default=func.now(),
+        onupdate=datetime.utcnow,
+    )

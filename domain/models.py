@@ -99,3 +99,24 @@ class Bookmark(BaseModel):
 
     question_id: int
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Flashcard(BaseModel):
+    """A study flashcard with spaced-repetition metadata."""
+
+    term: str
+    meaning: str = ""
+    example: str = ""
+    source_type: str = "manual"
+    source_exam_id: Optional[int] = None
+    source_question_id: Optional[int] = None
+    source_part: Optional[int] = None
+    tags: list[str] = Field(default_factory=list)
+    deck_name: str = "Default"
+    next_review_at: datetime = Field(default_factory=datetime.utcnow)
+    interval_days: int = 0
+    ease_factor: float = 2.5
+    repetition: int = 0
+    last_result: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

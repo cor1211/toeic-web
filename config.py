@@ -2,7 +2,13 @@
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # pragma: no cover - optional dependency fallback
+    def load_dotenv() -> bool:
+        """Fallback when python-dotenv is not installed."""
+        return False
 
 # Load .env file if it exists
 load_dotenv()
