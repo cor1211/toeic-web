@@ -20,5 +20,10 @@
 - Tao flashcard thu cong bang nut `Flashcard moi`.
 - Tim kiem theo `term`, loc theo `deck`, `tag`, `part`, va bat `chi hien den han`.
 - Sua va xoa mot flashcard trong danh sach.
-- Vao study mode, bam `Lat the`, sau do cham `Again`, `Hard`, `Good`, `Easy`.
+- Vao study mode, xac nhan flashcard co hieu ung lat 3D ro mat truoc/mat sau, khong nhap nhay.
+- Bam vao the de lat, sau do thu lat bang ban phim `Space` va `Enter` khi the dang focus.
+- Xac nhan nut `Again`, `Hard`, `Good`, `Easy` bi vo hieu hoa truoc khi lat va de bam sau khi lat.
+- Xac nhan progress session hien dung theo dang `the X / N` va thanh tien do cap nhat khi chuyen the.
+- Thay doi bo loc (`deck`, `tag`, `part`, `search`) va xac nhan queue hoc den han thay doi theo bo loc hien tai.
+- Bat che do `Reduce motion` trong he dieu hanh/trinh duyet va xac nhan lat the chuyen thanh chuyen canh nhe hon, khong gay choang.
 - Xac nhan so luong due cards giam sau khi review.

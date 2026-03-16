@@ -1,13 +1,15 @@
 /**
- * Flashcards Page — filter, manage, and review due flashcards.
+ * Flashcards Page — filter, manage, and study due flashcards with accessible 3D flip UX.
  */
 
 let flashcardsState = {
     allCards: [],
     cards: [],
     dueCards: [],
+    studyCards: [],
     studyIndex: 0,
     studyRevealed: false,
+    focusStudyCardAfterRender: true,
 };
 
 async function renderFlashcardsPage() {
@@ -36,19 +38,36 @@ async function renderFlashcardsPage() {
         </div>
     `;
 
-    await refreshFlashcardsData();
+    try {
+        await refreshFlashcardsData();
+    } catch (err) {
+        content.innerHTML = `
+            <div class="page-enter empty-state">
+                <p style="color:var(--incorrect)">Lỗi flashcards: ${escapeHtml(err.message)}</p>
+            </div>
+        `;
+    }
+
     setActivePageCleanup(() => {});
 }
 
 async function refreshFlashcardsData() {
     const filters = getFlashcardFiltersFromUI();
-    flashcardsState.allCards = await api.listFlashcards();
-    flashcardsState.cards = await api.listFlashcards(filters);
-    flashcardsState.dueCards = await api.listDueFlashcards(50);
-    flashcardsState.studyIndex = Math.min(flashcardsState.studyIndex, Math.max(flashcardsState.dueCards.length - 1, 0));
-    flashcardsState.studyRevealed = false;
-    renderFlashcardFilters();
-    renderFlashcardStudyPanel();
+    const previousCardId = flashcardsState.studyCards[flashcardsState.studyIndex]?.id || null;
+    const [allCards, cards, dueCards] = await Promise.all([
+        api.listFlashcards(),
+        api.listFlashcards(filters),
+        api.listDueFlashcards(50),
+    ]);
+
+    flashcardsState.allCards = allCards;
+    flashcardsState.cards = cards;
+    flashcardsState.dueCards = dueCards;
+    flashcardsState.studyCards = buildStudyQueue(dueCards, filters);
+    syncStudyPosition(previousCardId);
+
+    renderFlashcardFilters(filters);
+    renderFlashcardStudyPanel(filters);
     renderFlashcardList();
 }
 
@@ -62,7 +81,48 @@ function getFlashcardFiltersFromUI() {
     };
 }
 
-function renderFlashcardFilters() {
+function buildStudyQueue(dueCards, filters) {
+    return dueCards.filter((card) => matchesFlashcardFilters(card, filters));
+}
+
+function matchesFlashcardFilters(card, filters) {
+    const search = (filters.search || '').toLowerCase();
+    const deck = (filters.deck || '').toLowerCase();
+    const tag = (filters.tag || '').toLowerCase();
+    const part = filters.part ? String(filters.part) : '';
+    const haystack = [card.term, card.meaning, card.example].join(' ').toLowerCase();
+    const tags = (card.tags || []).map((item) => item.toLowerCase());
+
+    if (search && !haystack.includes(search)) return false;
+    if (deck && (card.deck_name || '').toLowerCase() !== deck) return false;
+    if (tag && !tags.includes(tag)) return false;
+    if (part && String(card.part || '') !== part) return false;
+    return true;
+}
+
+function syncStudyPosition(previousCardId) {
+    if (flashcardsState.studyCards.length === 0) {
+        flashcardsState.studyIndex = 0;
+        flashcardsState.studyRevealed = false;
+        return;
+    }
+
+    if (previousCardId) {
+        const nextIndex = flashcardsState.studyCards.findIndex((card) => card.id === previousCardId);
+        if (nextIndex >= 0) {
+            flashcardsState.studyIndex = nextIndex;
+            return;
+        }
+    }
+
+    flashcardsState.studyIndex = Math.min(
+        flashcardsState.studyIndex,
+        Math.max(flashcardsState.studyCards.length - 1, 0),
+    );
+    flashcardsState.studyRevealed = false;
+}
+
+function renderFlashcardFilters(filters = getFlashcardFiltersFromUI()) {
     const deckOptions = uniqueSortedValues(flashcardsState.allCards.map((card) => card.deck_name));
     const tagOptions = uniqueSortedValues(flashcardsState.allCards.flatMap((card) => card.tags || []));
     const partOptions = uniqueSortedValues(
@@ -71,11 +131,10 @@ function renderFlashcardFilters() {
             .filter((part) => part !== null && part !== undefined)
             .map((part) => String(part)),
     );
-    const filters = getFlashcardFiltersFromUI();
 
     document.getElementById('flashcard-filters-panel').innerHTML = `
         <div class="flashcard-panel-header">
-            <h2>Bộ lọc</h2>
+            <h2>Bộ lọc học nhanh</h2>
             <button class="btn btn-ghost btn-sm" onclick="clearFlashcardFilters()">Xoá lọc</button>
         </div>
         <div class="flashcard-filter-grid">
@@ -96,65 +155,115 @@ function renderFlashcardFilters() {
         </div>
         <label class="flashcard-due-toggle">
             <input id="flashcard-due-only" type="checkbox" ${filters.due_only ? 'checked' : ''} onchange="refreshFlashcardsData()">
-            Chỉ hiện flashcard đến hạn
+            Chỉ hiện flashcard đến hạn trong danh sách
         </label>
     `;
 }
 
-function renderFlashcardStudyPanel() {
+function renderFlashcardStudyPanel(filters) {
     const panel = document.getElementById('flashcard-study-panel');
-    const dueCount = flashcardsState.dueCards.length;
-    const currentCard = flashcardsState.dueCards[flashcardsState.studyIndex] || null;
+    const dueCount = flashcardsState.studyCards.length;
+    const currentCard = flashcardsState.studyCards[flashcardsState.studyIndex] || null;
+    const progress = dueCount > 0 ? Math.round(((flashcardsState.studyIndex + 1) / dueCount) * 100) : 0;
 
     if (!currentCard) {
-        panel.innerHTML = `
-            <div class="flashcard-panel-header">
-                <h2>Ôn tập hôm nay</h2>
-                <span class="flashcard-summary-pill">0 đến hạn</span>
-            </div>
-            <div class="empty-state" style="padding:12px 0">
-                <div class="empty-state-icon">🎉</div>
-                <p>Hiện chưa có flashcard nào đến hạn.</p>
-            </div>
-        `;
+        panel.innerHTML = renderEmptyStudyPanel(filters);
         return;
     }
 
     panel.innerHTML = `
         <div class="flashcard-panel-header">
-            <h2>Ôn tập hôm nay</h2>
-            <span class="flashcard-summary-pill">${dueCount} đến hạn</span>
+            <div>
+                <h2>Ôn tập đến hạn</h2>
+                <p class="flashcard-panel-subtitle">Queue học đang áp dụng deck/tag/part/search hiện tại.</p>
+            </div>
+            <span class="flashcard-summary-pill">${dueCount} thẻ</span>
         </div>
-        <div class="study-progress">${flashcardsState.studyIndex + 1} / ${dueCount}</div>
-        <div class="study-card ${flashcardsState.studyRevealed ? 'revealed' : ''}">
-            <div class="study-card-label">Mặt trước</div>
-            <div class="study-card-term">${escapeHtml(currentCard.term)}</div>
-            ${flashcardsState.studyRevealed ? `
-                <div class="study-card-back">
-                    <div class="study-card-label">Mặt sau</div>
-                    <p><strong>Meaning:</strong> ${escapeHtml(currentCard.meaning || 'Chưa có')}</p>
-                    <p><strong>Example:</strong> ${escapeHtml(currentCard.example || 'Chưa có')}</p>
-                    <p><strong>Nguồn:</strong> ${escapeHtml(buildFlashcardSourceText(currentCard))}</p>
-                </div>
-            ` : ''}
+        <div class="study-progress-row">
+            <span class="study-progress-text">Thẻ ${flashcardsState.studyIndex + 1} / ${dueCount}</span>
+            <span class="study-progress-text">${progress}%</span>
         </div>
+        <div class="study-progress-bar" aria-hidden="true">
+            <span style="width:${progress}%"></span>
+        </div>
+        <button id="study-card-toggle" type="button"
+            class="study-card-shell ${flashcardsState.studyRevealed ? 'revealed' : ''}"
+            aria-pressed="${flashcardsState.studyRevealed}"
+            aria-label="${flashcardsState.studyRevealed ? 'Lật về mặt trước flashcard' : 'Lật sang mặt sau flashcard'}"
+            onclick="toggleStudyCardReveal()">
+            <span class="study-card-scene">
+                <span class="study-card-face study-card-front">
+                    <span class="study-card-face-meta">Mặt trước</span>
+                    <span class="study-card-term">${escapeHtml(currentCard.term)}</span>
+                    <span class="study-card-hint">Click, Enter hoặc Space để lật thẻ</span>
+                </span>
+                <span class="study-card-face study-card-back">
+                    <span class="study-card-face-meta">Mặt sau</span>
+                    <span class="study-card-back-block">
+                        <strong>Meaning</strong>
+                        <span>${escapeHtml(currentCard.meaning || 'Chưa có')}</span>
+                    </span>
+                    <span class="study-card-back-block">
+                        <strong>Example</strong>
+                        <span>${escapeHtml(currentCard.example || 'Chưa có')}</span>
+                    </span>
+                    <span class="study-card-back-block">
+                        <strong>Tags</strong>
+                        <span>${renderCompactTags(currentCard.tags)}</span>
+                    </span>
+                    <span class="study-card-back-block">
+                        <strong>Nguồn</strong>
+                        <span>${escapeHtml(buildFlashcardSourceText(currentCard))}</span>
+                    </span>
+                </span>
+            </span>
+        </button>
         <div class="study-actions">
-            ${flashcardsState.studyRevealed ? `
-                <button class="btn btn-ghost btn-sm" onclick="rateCurrentFlashcard('again')">Again</button>
-                <button class="btn btn-ghost btn-sm" onclick="rateCurrentFlashcard('hard')">Hard</button>
-                <button class="btn btn-primary btn-sm" onclick="rateCurrentFlashcard('good')">Good</button>
-                <button class="btn btn-primary btn-sm" onclick="rateCurrentFlashcard('easy')">Easy</button>
-            ` : `
-                <button class="btn btn-primary" onclick="revealCurrentStudyCard()">Lật thẻ</button>
-            `}
+            <button class="btn btn-ghost btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('again')">Again</button>
+            <button class="btn btn-ghost btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('hard')">Hard</button>
+            <button class="btn btn-primary btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('good')">Good</button>
+            <button class="btn btn-primary btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('easy')">Easy</button>
         </div>
     `;
+
+    if (flashcardsState.focusStudyCardAfterRender) {
+        flashcardsState.focusStudyCardAfterRender = false;
+        requestAnimationFrame(() => {
+            document.getElementById('study-card-toggle')?.focus();
+        });
+    }
+}
+
+function renderEmptyStudyPanel(filters) {
+    const filterActive = Boolean(filters.search || filters.deck || filters.tag || filters.part);
+    const message = filterActive
+        ? 'Không có thẻ đến hạn phù hợp với bộ lọc hiện tại.'
+        : 'Hiện chưa có flashcard nào đến hạn.';
+
+    return `
+        <div class="flashcard-panel-header">
+            <div>
+                <h2>Ôn tập đến hạn</h2>
+                <p class="flashcard-panel-subtitle">Session học sẽ cập nhật theo bộ lọc hiện tại.</p>
+            </div>
+            <span class="flashcard-summary-pill">0 thẻ</span>
+        </div>
+        <div class="empty-state flashcard-empty-state">
+            <div class="empty-state-icon">🎉</div>
+            <p>${message}</p>
+        </div>
+    `;
+}
+
+function renderCompactTags(tags) {
+    if (!tags || tags.length === 0) return 'Chưa gắn tag';
+    return tags.map((tag) => `#${escapeHtml(tag)}`).join(' • ');
 }
 
 function renderFlashcardList() {
     const list = document.getElementById('flashcard-list');
     const summary = document.getElementById('flashcard-list-summary');
-    summary.textContent = `${flashcardsState.cards.length} flashcard • ${flashcardsState.dueCards.length} đến hạn`;
+    summary.textContent = `${flashcardsState.cards.length} flashcard • ${flashcardsState.studyCards.length} thẻ đang khớp queue học`;
 
     if (flashcardsState.cards.length === 0) {
         list.innerHTML = `
@@ -204,6 +313,7 @@ function clearFlashcardFilters() {
     if (tag) tag.value = '';
     if (part) part.value = '';
     if (dueOnly) dueOnly.checked = false;
+    flashcardsState.focusStudyCardAfterRender = true;
     refreshFlashcardsData();
 }
 
@@ -212,7 +322,10 @@ function openNewFlashcardModal() {
         mode: 'create',
         title: 'Flashcard mới',
         sourceType: 'manual',
-        onSaved: refreshFlashcardsData,
+        onSaved: async () => {
+            flashcardsState.focusStudyCardAfterRender = true;
+            await refreshFlashcardsData();
+        },
     });
 }
 
@@ -238,24 +351,29 @@ async function deleteFlashcardCard(flashcardId) {
     try {
         await api.deleteFlashcard(flashcardId);
         showToast('Đã xoá flashcard', 'success');
+        flashcardsState.focusStudyCardAfterRender = true;
         await refreshFlashcardsData();
     } catch (err) {
         showToast(`Lỗi xoá flashcard: ${err.message}`, 'error');
     }
 }
 
-function revealCurrentStudyCard() {
-    flashcardsState.studyRevealed = true;
-    renderFlashcardStudyPanel();
+function toggleStudyCardReveal() {
+    if (flashcardsState.studyCards.length === 0) return;
+    flashcardsState.studyRevealed = !flashcardsState.studyRevealed;
+    flashcardsState.focusStudyCardAfterRender = true;
+    renderFlashcardStudyPanel(getFlashcardFiltersFromUI());
 }
 
 async function rateCurrentFlashcard(result) {
-    const currentCard = flashcardsState.dueCards[flashcardsState.studyIndex];
-    if (!currentCard) return;
+    const currentCard = flashcardsState.studyCards[flashcardsState.studyIndex];
+    if (!currentCard || !flashcardsState.studyRevealed) return;
 
     try {
         await api.reviewFlashcard(currentCard.id, result);
         showToast(`Đã cập nhật: ${currentCard.term}`, 'success');
+        flashcardsState.studyRevealed = false;
+        flashcardsState.focusStudyCardAfterRender = true;
         await refreshFlashcardsData();
     } catch (err) {
         showToast(`Lỗi review flashcard: ${err.message}`, 'error');
