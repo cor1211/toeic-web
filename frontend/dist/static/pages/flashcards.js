@@ -22,9 +22,14 @@ async function renderFlashcardsPage() {
                     + Flashcard mới
                 </button>
             </div>
-            <div class="flashcard-dashboard">
-                <div class="flashcard-filters glass-card" id="flashcard-filters-panel"></div>
-                <div class="flashcard-study glass-card" id="flashcard-study-panel"></div>
+            <section class="flashcard-study-hero" aria-label="Khu vực ôn tập flashcard">
+                <div class="flashcard-study-backdrop" aria-hidden="true"></div>
+                <div class="flashcard-study-shell">
+                    <div class="flashcard-study glass-card" id="flashcard-study-panel"></div>
+                </div>
+            </section>
+            <div class="glass-card flashcard-filters-panel">
+                <div class="flashcard-filters" id="flashcard-filters-panel"></div>
             </div>
             <div class="glass-card flashcard-list-panel">
                 <div class="flashcard-list-header">
@@ -172,12 +177,16 @@ function renderFlashcardStudyPanel(filters) {
     }
 
     panel.innerHTML = `
-        <div class="flashcard-panel-header">
+        <div class="flashcard-panel-header flashcard-panel-header-study">
             <div>
                 <h2>Ôn tập đến hạn</h2>
-                <p class="flashcard-panel-subtitle">Queue học đang áp dụng deck/tag/part/search hiện tại.</p>
+                <p class="flashcard-panel-subtitle">Flashcard học được căn giữa để bạn tập trung nhớ từ trước khi lật.</p>
             </div>
             <span class="flashcard-summary-pill">${dueCount} thẻ</span>
+        </div>
+        <div class="study-panel-intro">
+            <span class="study-panel-badge">Study Mode</span>
+            <p>Queue học vẫn áp dụng deck/tag/part/search hiện tại, nhưng ưu tiên hiển thị thẻ như một vùng học tập trung tâm.</p>
         </div>
         <div class="study-progress-row">
             <div class="study-session-stat">
@@ -193,6 +202,7 @@ function renderFlashcardStudyPanel(filters) {
         <div class="study-progress-bar" aria-hidden="true">
             <span style="width:${progress}%"></span>
         </div>
+        <div class="study-card-stack-wrap">
         <div class="study-card-stack">
             <span class="study-card-layer study-card-layer-back" aria-hidden="true"></span>
             <span class="study-card-layer study-card-layer-mid" aria-hidden="true"></span>
@@ -235,6 +245,7 @@ function renderFlashcardStudyPanel(filters) {
                     </span>
                 </span>
             </button>
+        </div>
         </div>
         <div class="study-actions">
             <button class="btn btn-ghost btn-sm study-rating-btn is-again" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('again')">

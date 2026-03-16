@@ -17,6 +17,7 @@
 
 ## Flashcard Workspace
 - Mo route `#/flashcards`.
+- Xac nhan khu vuc study card nam giua man hinh, noi bat hon bo loc va danh sach ben duoi.
 - Tao flashcard thu cong bang nut `Flashcard moi`.
 - Tim kiem theo `term`, loc theo `deck`, `tag`, `part`, va bat `chi hien den han`.
 - Sua va xoa mot flashcard trong danh sach.

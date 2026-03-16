@@ -1102,11 +1102,57 @@ img { max-width: 100%; height: auto; }
     cursor: pointer;
 }
 
-.flashcard-dashboard {
-    display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(320px, 1fr);
-    gap: 20px;
+.flashcard-study-hero {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 4px 0 28px;
+    padding: 28px 0 10px;
+}
+
+.flashcard-study-backdrop {
+    position: absolute;
+    inset: 0;
+    border-radius: 36px;
+    background:
+        radial-gradient(circle at 50% 28%, rgba(127, 90, 240, 0.24), transparent 36%),
+        radial-gradient(circle at 78% 30%, rgba(61, 169, 252, 0.16), transparent 24%),
+        radial-gradient(circle at 20% 68%, rgba(44, 182, 125, 0.14), transparent 20%);
+    filter: blur(10px);
+    opacity: 0.95;
+    pointer-events: none;
+}
+
+.flashcard-study-shell {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 980px);
+}
+
+.flashcard-study {
+    position: relative;
+    padding: 28px;
+    border-radius: 32px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+        linear-gradient(135deg, rgba(26, 25, 47, 0.95), rgba(14, 17, 34, 0.98));
+    box-shadow: 0 28px 70px rgba(4, 7, 24, 0.34);
+}
+
+.flashcard-study::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.05), transparent 36%),
+        linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+    pointer-events: none;
+}
+
+.flashcard-filters-panel {
     margin-bottom: 24px;
+    padding: 20px 24px;
 }
 
 .flashcard-list-panel {
@@ -1137,6 +1183,11 @@ img { max-width: 100%; height: auto; }
     margin-bottom: 16px;
 }
 
+.flashcard-panel-header-study {
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
 .flashcard-filter-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1165,10 +1216,39 @@ img { max-width: 100%; height: auto; }
     font-weight: 700;
 }
 
-.study-progress {
-    color: var(--text-muted);
-    font-size: 13px;
-    margin-bottom: 14px;
+.study-panel-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.study-panel-intro p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.study-panel-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 112px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(127, 90, 240, 0.32), rgba(61, 169, 252, 0.22));
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .study-progress-row {
@@ -1227,7 +1307,8 @@ img { max-width: 100%; height: auto; }
     position: relative;
     height: 10px;
     width: 100%;
-    margin-bottom: 26px;
+    max-width: 760px;
+    margin: 0 auto 28px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.06);
     overflow: hidden;
@@ -1241,8 +1322,14 @@ img { max-width: 100%; height: auto; }
     transition: width var(--transition-normal);
 }
 
+.study-card-stack-wrap {
+    display: flex;
+    justify-content: center;
+}
+
 .study-card-stack {
     position: relative;
+    width: min(100%, 760px);
     margin-bottom: 20px;
 }
 
@@ -1278,23 +1365,24 @@ img { max-width: 100%; height: auto; }
     text-align: left;
     animation: studyCardEnter var(--transition-normal) ease;
     transition: transform var(--transition-fast);
+    transform-style: preserve-3d;
 }
 
 .study-card-shell:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px) rotateX(2deg);
 }
 
 .study-card-scene {
     position: relative;
     display: block;
-    min-height: 370px;
+    min-height: 430px;
     border-radius: var(--border-radius-lg);
     transform-style: preserve-3d;
-    transition: transform var(--transition-slow);
+    transition: transform 720ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .study-card-shell.revealed .study-card-scene {
-    transform: rotateY(180deg);
+    transform: rotateY(180deg) rotateX(2deg);
 }
 
 .study-card-face {
@@ -1324,6 +1412,15 @@ img { max-width: 100%; height: auto; }
     background:
         linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.04) 30%, transparent 60%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%);
+    pointer-events: none;
+}
+
+.study-card-face::after {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
     pointer-events: none;
 }
 
@@ -1377,6 +1474,7 @@ img { max-width: 100%; height: auto; }
     flex-direction: column;
     justify-content: center;
     gap: 14px;
+    align-items: flex-start;
 }
 
 .study-card-kicker {
@@ -1388,7 +1486,7 @@ img { max-width: 100%; height: auto; }
 
 .study-card-term {
     display: block;
-    max-width: 11ch;
+    max-width: 12ch;
     font-size: clamp(32px, 5vw, 54px);
     font-weight: 800;
     line-height: 1.08;
@@ -1416,6 +1514,7 @@ img { max-width: 100%; height: auto; }
     color: #d6def8;
     font-size: 12px;
     font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .study-card-back-layout {
@@ -1489,7 +1588,8 @@ img { max-width: 100%; height: auto; }
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin-top: 6px;
+    width: min(100%, 760px);
+    margin: 6px auto 0;
 }
 
 .study-rating-btn {
@@ -1651,6 +1751,9 @@ img { max-width: 100%; height: auto; }
     .study-card-layer {
         display: none;
     }
+    .flashcard-study-backdrop {
+        filter: none;
+    }
     .study-card-face {
         transition: opacity 0.01ms linear;
     }
@@ -1700,6 +1803,17 @@ img { max-width: 100%; height: auto; }
     .flashcard-filter-grid {
         grid-template-columns: 1fr;
     }
+    .flashcard-study-hero {
+        padding-top: 8px;
+    }
+    .flashcard-study {
+        padding: 20px;
+        border-radius: 24px;
+    }
+    .study-panel-intro {
+        flex-direction: column;
+        align-items: flex-start;
+    }
     .study-progress-row {
         flex-direction: column;
         align-items: flex-start;
@@ -1714,7 +1828,7 @@ img { max-width: 100%; height: auto; }
         width: 100%;
     }
     .study-card-scene {
-        min-height: 420px;
+        min-height: 430px;
     }
     .study-actions {
         grid-template-columns: 1fr;
