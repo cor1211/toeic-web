@@ -19,6 +19,7 @@
 - Mo route `#/flashcards`.
 - Xac nhan khu vuc study card nam giua man hinh, noi bat hon bo loc va danh sach ben duoi.
 - Xac nhan the hoc co kich thuoc gon hon, ti le giong la bai, khong con trai rong nhu mot panel noi dung.
+- Re chuot tren the o desktop va xac nhan the co tilt/glare nhe theo con tro; tren mobile hoac reduced motion khong co hieu ung gay roi.
 - Tao flashcard thu cong bang nut `Flashcard moi`.
 - Tim kiem theo `term`, loc theo `deck`, `tag`, `part`, va bat `chi hien den han`.
 - Sua va xoa mot flashcard trong danh sach.

@@ -10,6 +10,7 @@ let flashcardsState = {
     studyIndex: 0,
     studyRevealed: false,
     focusStudyCardAfterRender: true,
+    studyEffectsCleanup: null,
 };
 
 async function renderFlashcardsPage() {
@@ -53,7 +54,9 @@ async function renderFlashcardsPage() {
         `;
     }
 
-    setActivePageCleanup(() => {});
+    setActivePageCleanup(() => {
+        cleanupStudyCardEffects();
+    });
 }
 
 async function refreshFlashcardsData() {
@@ -180,13 +183,13 @@ function renderFlashcardStudyPanel(filters) {
         <div class="flashcard-panel-header flashcard-panel-header-study">
             <div>
                 <h2>Ôn tập đến hạn</h2>
-                <p class="flashcard-panel-subtitle">Flashcard học được căn giữa để bạn tập trung nhớ từ trước khi lật.</p>
+                <p class="flashcard-panel-subtitle">Một thẻ, một lượt nhớ, một cú lật.</p>
             </div>
             <span class="flashcard-summary-pill">${dueCount} thẻ</span>
         </div>
         <div class="study-panel-intro">
             <span class="study-panel-badge">Study Mode</span>
-            <p>Queue học vẫn áp dụng deck/tag/part/search hiện tại, nhưng ưu tiên hiển thị thẻ như một vùng học tập trung tâm.</p>
+            <p>Giữ mắt ở giữa màn hình, nhớ từ trước rồi mới lật để kiểm tra.</p>
         </div>
         <div class="study-progress-row">
             <div class="study-session-stat">
@@ -273,6 +276,8 @@ function renderFlashcardStudyPanel(filters) {
             document.getElementById('study-card-toggle')?.focus();
         });
     }
+
+    setupStudyCardEffects();
 }
 
 function renderEmptyStudyPanel(filters) {
@@ -429,6 +434,113 @@ function toggleStudyCardReveal() {
     flashcardsState.studyRevealed = !flashcardsState.studyRevealed;
     flashcardsState.focusStudyCardAfterRender = true;
     renderFlashcardStudyPanel(getFlashcardFiltersFromUI());
+}
+
+function cleanupStudyCardEffects() {
+    if (typeof flashcardsState.studyEffectsCleanup === 'function') {
+        flashcardsState.studyEffectsCleanup();
+    }
+    flashcardsState.studyEffectsCleanup = null;
+}
+
+function setupStudyCardEffects() {
+    cleanupStudyCardEffects();
+
+    const shell = document.getElementById('study-card-toggle');
+    if (!shell) return;
+
+    const supportsFinePointer = window.matchMedia('(pointer:fine)').matches;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scene = shell.querySelector('.study-card-scene');
+    if (!scene) return;
+
+    let rafId = null;
+    let currentRotateX = 0;
+    let currentRotateY = 0;
+
+    const applyTransform = (rotateX, rotateY) => {
+        shell.style.setProperty('--study-tilt-x', `${rotateX.toFixed(2)}deg`);
+        shell.style.setProperty('--study-tilt-y', `${rotateY.toFixed(2)}deg`);
+        shell.style.setProperty('--study-glare-x', `${50 + rotateY * 5}%`);
+        shell.style.setProperty('--study-glare-y', `${50 - rotateX * 6}%`);
+    };
+
+    const resetTransform = () => {
+        currentRotateX = 0;
+        currentRotateY = 0;
+        shell.classList.remove('is-tilting');
+        shell.classList.remove('is-pressing');
+        applyTransform(0, 0);
+    };
+
+    const handlePointerMove = (event) => {
+        if (!supportsFinePointer || prefersReducedMotion) return;
+        const bounds = shell.getBoundingClientRect();
+        const offsetX = (event.clientX - bounds.left) / bounds.width;
+        const offsetY = (event.clientY - bounds.top) / bounds.height;
+        currentRotateY = (offsetX - 0.5) * 14;
+        currentRotateX = (0.5 - offsetY) * 12;
+        shell.classList.add('is-tilting');
+
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            applyTransform(currentRotateX, currentRotateY);
+            rafId = null;
+        });
+    };
+
+    const handlePointerLeave = () => {
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        resetTransform();
+    };
+
+    const handlePointerDown = () => {
+        if (!prefersReducedMotion) {
+            shell.classList.add('is-pressing');
+        }
+    };
+
+    const handlePointerUp = () => {
+        shell.classList.remove('is-pressing');
+    };
+
+    const handleClick = () => {
+        if (prefersReducedMotion) return;
+        shell.classList.remove('is-flipping');
+        void shell.offsetWidth;
+        shell.classList.add('is-flipping');
+        window.setTimeout(() => {
+            shell.classList.remove('is-flipping');
+        }, 720);
+    };
+
+    applyTransform(0, 0);
+    shell.addEventListener('pointermove', handlePointerMove);
+    shell.addEventListener('pointerleave', handlePointerLeave);
+    shell.addEventListener('pointerdown', handlePointerDown);
+    shell.addEventListener('pointerup', handlePointerUp);
+    shell.addEventListener('pointercancel', handlePointerLeave);
+    shell.addEventListener('click', handleClick);
+
+    flashcardsState.studyEffectsCleanup = () => {
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+        }
+        shell.removeEventListener('pointermove', handlePointerMove);
+        shell.removeEventListener('pointerleave', handlePointerLeave);
+        shell.removeEventListener('pointerdown', handlePointerDown);
+        shell.removeEventListener('pointerup', handlePointerUp);
+        shell.removeEventListener('pointercancel', handlePointerLeave);
+        shell.removeEventListener('click', handleClick);
+        shell.classList.remove('is-flipping', 'is-tilting', 'is-pressing');
+        shell.style.removeProperty('--study-tilt-x');
+        shell.style.removeProperty('--study-tilt-y');
+        shell.style.removeProperty('--study-glare-x');
+        shell.style.removeProperty('--study-glare-y');
+    };
 }
 
 async function rateCurrentFlashcard(result) {
