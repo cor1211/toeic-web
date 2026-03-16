@@ -90,7 +90,10 @@ async def serve_spa(full_path: str):
 
     index_path = FRONTEND_DIST / "index.html"
     if index_path.exists():
-        return FileResponse(str(index_path))
+        return FileResponse(
+            str(index_path),
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
     return {"detail": "Frontend not found"}
 
 
