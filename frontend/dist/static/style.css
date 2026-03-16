@@ -1325,32 +1325,33 @@ img { max-width: 100%; height: auto; }
 .study-card-stack-wrap {
     display: flex;
     justify-content: center;
+    perspective: 2200px;
 }
 
 .study-card-stack {
     position: relative;
-    width: min(100%, 760px);
-    margin-bottom: 20px;
+    width: min(100%, 420px);
+    margin-bottom: 24px;
 }
 
 .study-card-layer {
     position: absolute;
-    inset: auto 22px -12px 22px;
-    height: 100%;
-    border-radius: calc(var(--border-radius-lg) + 2px);
-    background: linear-gradient(135deg, rgba(127, 90, 240, 0.18), rgba(61, 169, 252, 0.08));
+    inset: 16px 20px -16px 20px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(127, 90, 240, 0.2), rgba(61, 169, 252, 0.08));
     border: 1px solid rgba(127, 90, 240, 0.15);
     pointer-events: none;
+    filter: blur(0.2px);
 }
 
 .study-card-layer-mid {
-    transform: translateY(10px) scale(0.985);
-    opacity: 0.65;
+    transform: translateY(10px) rotateZ(-2deg) scale(0.985);
+    opacity: 0.58;
 }
 
 .study-card-layer-back {
-    transform: translateY(20px) scale(0.96);
-    opacity: 0.35;
+    transform: translateY(20px) rotateZ(2deg) scale(0.96);
+    opacity: 0.3;
 }
 
 .study-card-shell {
@@ -1364,25 +1365,28 @@ img { max-width: 100%; height: auto; }
     perspective: 1400px;
     text-align: left;
     animation: studyCardEnter var(--transition-normal) ease;
-    transition: transform var(--transition-fast);
+    transition: transform 220ms ease, filter 220ms ease;
     transform-style: preserve-3d;
 }
 
 .study-card-shell:hover {
-    transform: translateY(-4px) rotateX(2deg);
+    transform: translateY(-6px) rotateX(6deg) rotateY(-6deg);
+    filter: drop-shadow(0 24px 34px rgba(5, 9, 24, 0.22));
 }
 
 .study-card-scene {
     position: relative;
     display: block;
-    min-height: 430px;
-    border-radius: var(--border-radius-lg);
+    aspect-ratio: 0.72;
+    min-height: 0;
+    border-radius: 28px;
     transform-style: preserve-3d;
-    transition: transform 720ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 820ms cubic-bezier(0.22, 0.84, 0.24, 1);
+    will-change: transform;
 }
 
 .study-card-shell.revealed .study-card-scene {
-    transform: rotateY(180deg) rotateX(2deg);
+    transform: rotateY(180deg) rotateX(10deg);
 }
 
 .study-card-face {
@@ -1391,15 +1395,18 @@ img { max-width: 100%; height: auto; }
     display: flex;
     flex-direction: column;
     gap: 22px;
-    padding: 26px;
-    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    border-radius: 28px;
     overflow: hidden;
     border: 1px solid rgba(127, 90, 240, 0.18);
     background:
         radial-gradient(circle at top right, rgba(61, 169, 252, 0.18), transparent 32%),
         radial-gradient(circle at bottom left, rgba(127, 90, 240, 0.16), transparent 30%),
         linear-gradient(160deg, rgba(32, 31, 59, 0.98), rgba(15, 22, 44, 0.98));
-    box-shadow: 0 18px 40px rgba(8, 10, 28, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    box-shadow:
+        0 28px 52px rgba(8, 10, 28, 0.44),
+        0 16px 20px rgba(8, 10, 28, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform-style: preserve-3d;
@@ -1419,7 +1426,7 @@ img { max-width: 100%; height: auto; }
     content: '';
     position: absolute;
     inset: 18px;
-    border-radius: 24px;
+    border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.04);
     pointer-events: none;
 }
@@ -1487,7 +1494,7 @@ img { max-width: 100%; height: auto; }
 .study-card-term {
     display: block;
     max-width: 12ch;
-    font-size: clamp(32px, 5vw, 54px);
+    font-size: clamp(28px, 4vw, 42px);
     font-weight: 800;
     line-height: 1.08;
     letter-spacing: -0.05em;
@@ -1545,7 +1552,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .study-card-back-value {
-    font-size: clamp(20px, 3vw, 28px);
+    font-size: clamp(18px, 2.5vw, 24px);
     font-weight: 700;
     line-height: 1.35;
     letter-spacing: -0.03em;
@@ -1588,7 +1595,7 @@ img { max-width: 100%; height: auto; }
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    width: min(100%, 760px);
+    width: min(100%, 420px);
     margin: 6px auto 0;
 }
 
@@ -1828,7 +1835,7 @@ img { max-width: 100%; height: auto; }
         width: 100%;
     }
     .study-card-scene {
-        min-height: 430px;
+        aspect-ratio: 0.72;
     }
     .study-actions {
         grid-template-columns: 1fr;
@@ -1838,9 +1845,9 @@ img { max-width: 100%; height: auto; }
     }
     .study-card-term {
         max-width: 100%;
-        font-size: clamp(28px, 10vw, 42px);
+        font-size: clamp(26px, 9vw, 38px);
     }
     .study-card-back-value {
-        font-size: 22px;
+        font-size: 21px;
     }
 }
