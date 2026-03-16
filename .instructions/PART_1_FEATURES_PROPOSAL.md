@@ -1,81 +1,175 @@
-# Đề xuất Phát triển Tính năng (TOEIC Web App)
-**Tập trung vào Part 1 (Photographs) và Khả năng Mở rộng (Part 2-7)**
+# PART 1 - FEATURE SPEC (BẢN HOÀN CHỈNH CHO AGENT TRIỂN KHAI)
 
-Mục tiêu của ứng dụng không chỉ là một công cụ "làm bài tập mộc", mà là một **"Review Studio" (Không gian Ôn luyện)** chuyên sâu. Dựa trên bản chất của TOEIC Part 1 (Nghe mô tả tranh), sau đây là bản đề xuất các tính năng cốt lõi giúp tối ưu hóa việc học của người dùng, được thiết kế để dễ dàng mở rộng cho các phần khác trong tương lai.
+## 1. Mục tiêu Part 1
+Tăng hiệu quả học và trải nghiệm thao tác nhanh cho người dùng TOEIC 2 kỹ năng, dựa trên hệ thống đang chạy ổn định hiện tại.
 
----
+Trọng tâm Part 1 gồm 2 nhóm tính năng:
+1. Điều khiển audio bằng phím tắt toàn cục, không phụ thuộc focus vào thẻ audio.
+2. Flashcard đa năng: cho phép tạo flashcard từ từ/cụm từ được chọn ở màn review và mở rộng dùng cho Part 1-7.
 
-## 1. Hệ thống Quản lý Audio Thông minh (Smart Audio Controls)
-*Vấn đề: Đề thi thật thường chỉ có 1 file audio dài 45-60 phút. Người học mất rất nhiều thời gian "tua" để tìm lại đúng đoạn audio của câu bị sai.*
+## 2. Hiện trạng hệ thống (đã có)
+Từ code hiện tại, hệ thống đã vận hành tốt các luồng chính:
+- Import đề NN24H từ file HTML hoặc nội dung dán.
+- Tải và lưu audio, ảnh, câu hỏi, đáp án, giải thích.
+- Làm bài (Attempt), tự lưu tiến độ mỗi 30 giây, nộp bài, chấm điểm theo % đúng.
+- Review kết quả, filter đúng/sai/chưa làm, bookmark và ghi chú theo câu.
 
-### Tính năng Đề xuất:
-- **Cắt/Gắn mốc Audio (Audio Timestamping/Slicing):**
-  - **Mô tả:** Cho phép người dùng (hoặc hệ thống tự động nhận diện khoảng lặng) gắn thẻ timestamp (thời gian bắt đầu - kết thúc) cho từng câu hỏi.
-  - **Trải nghiệm Review:** Khi xem lại Câu 1 bị sai, sẽ có sẵn nút `[▶] Nghe lại câu này` – chỉ phát đúng 15 giây audio của câu đó.
-  - **Mở rộng (Part 2-4):** Cực kỳ quan trọng cho Part 2 (Nghe phản xạ nhanh) và Part 3, 4 (Đoạn hội thoại).
-- **Audio Looping & Speed Control:**
-  - **Mô tả:** Nút "Lặp lại liên tục" (Loop) đoạn audio của 1 câu để luyện nghe chép chính tả (Dictation). Tích hợp tăng/giảm tốc độ (0.8x - 1.2x - 1.5x) cho người muốn luyện nghe bắt âm.
+=> Part 1 không phá vỡ các chức năng cũ, chỉ mở rộng trải nghiệm học.
 
-## 2. Interactive Transcript (Đoạn trích Tương tác)
-*Vấn đề: Part 1 trên giấy không có chữ. Khi review, người học chỉ đọc giải thích tĩnh.*
+## 3. Feature A - Audio Shortcut Toàn Cục
 
-### Tính năng Đề xuất:
-- **Click-to-play Transcript:**
-  - **Mô tả:** Trong chế độ Review, hiển thị Transcript (Lời thoại) dưới dạng: `(A) [Câu A]`, `(B) [Câu B]`, `(C) [Câu C]`, `(D) [Câu D]`.
-  - Khi người dùng click vào dòng `(B)`, audio sẽ chỉ phát đúng câu B. Điều này giúp luyện nghe phân biệt giữa âm và chữ.
-  - **Mở rộng:** Hữu ích cho Part 2 (Click từng đáp án A, B, C để nghe) và Part 3, 4 (Click vào từng câu trong đoạn văn để nghe lời thoại tương ứng).
-- **Shadowing Mode:**
-  - **Mô tả:** Che/Hiện (Toggle) cụm từ, yêu cầu người học nhại lại (Shadowing) theo giọng đọc.
+### 3.1 Vấn đề người dùng
+Người học đang cần thao tác audio nhanh khi làm bài/review, nhưng hiện tại:
+- Arrow Left/Right đã dùng cho chuyển câu ở trang làm bài.
+- Chưa có chuẩn chung để tua audio mà không click vào thanh audio trước.
 
-## 3. Phân tích Các "Bẫy" (Distractor Analysis)
-*Vấn đề: Học sinh thường lặp lại lỗi sai vì không hiểu "tại sao câu kia lại sai".*
+### 3.2 Hành vi mong muốn
+Khi trang có audio player hiển thị (Attempt hoặc Review):
+- Space: Play/Pause audio.
+- ArrowRight: tua +5 giây.
+- ArrowLeft: tua -5 giây.
 
-### Tính năng Đề xuất:
-- **Gắn Tag Lỗi Nhận Thức (Error Tagging):**
-  - **Mô tả:** Part 1 thường có 4 loại bẫy kinh điển. Cho phép hệ thống hoặc người dùng gắn tag cho từng câu sai:
-    - 🏷️ `Sai Hành động (Wrong Action)`
-    - 🏷️ `Sai Chủ thể (Wrong Subject)`
-    - 🏷️ `Sai Vị trí (Wrong Location)`
-    - 🏷️ `Âm tương tự (Similar-sounding Words)`
-  - **Trải nghiệm Review:** Thêm một filter trong Dashboard: *"Hiển thị tất cả các câu tôi sập bẫy 'Tự suy diễn' trong tuần qua"*.
-  - **Mở rộng (Part 2, 5, 6, 7):** Part 2 có bẫy Yes/No Question, Same Word. Part 5 có bẫy Word Form, Collocation. Hệ thống tag này sẽ là cốt lõi cho mọi Part.
+Điều kiện bắt buộc:
+- Có hiệu lực dù audio chưa được focus/click.
+- Không kích hoạt khi user đang gõ trong input/textarea/contenteditable.
+- Khi không có audio, phím hoạt động theo logic cũ.
 
-## 4. Tương tác Hình ảnh Nâng cao (Advanced Image Interaction)
-*Vấn đề: Hình ảnh tĩnh đôi khi không tập trung được sự chú ý vào từ vựng.*
+### 3.3 Quy tắc tránh xung đột phím
+Để không phá hành vi chuyển câu hiện có:
+- Ưu tiên audio shortcut khi audio đang tồn tại trên trang.
+- Nếu muốn giữ điều hướng câu bằng mũi tên, chuyển điều hướng câu sang:
+	- Alt + ArrowLeft: câu trước
+	- Alt + ArrowRight: câu sau
 
-### Tính năng Đề xuất:
-- **Hotspot Highlighting (Tính năng Review):**
-  - **Mô tả:** Cho phép người click/vẽ vùng đánh dấu trên bức ảnh để ghi chú từ vựng trực tiếp lên ảnh. Vd: khoanh tròn người đàn ông → ghi chú `adjusting the microphone`.
-  - **Tính năng Flashcard Hình ảnh:** Ẩn chú thích và yêu cầu người dùng miêu tả bức ảnh trước khi click để hiện đáp án thực tế.
-  - **Mở rộng:** Trong Part 7 (Đọc hiểu), tính năng này tương đương với việc "Highlight dẫn chứng" (Khoanh màu vàng đoạn văn tương ứng với đáp án câu 150).
+Lưu ý: Agent có thể chọn phương án khác, nhưng phải đảm bảo tính nhất quán và có thông báo hướng dẫn phím trong UI.
 
-## 5. Vocabulary Extraction & Spaced Repetition (SRS)
-*Vấn đề: Gặp từ mới trong một câu → Tra từ điển → Quên.*
-
-### Tính năng Đề xuất:
-- **One-click Dictionary & Add to Deck:**
-  - **Mô tả:** Trong phần lời giải, click đúp vào một từ bất kỳ → Hiện tooltip nghĩa Tiếng Việt → Nút `[+] Lưu vào sổ tay`.
-  - **Bổ trợ:** Kết hợp với một thuật toán Spaced Repetition thu gọn (như Anki). Dashboard sẽ hiện nhắc nhở: *"Bạn có 15 từ vựng Part 1 cần ôn tập hôm nay"*.
-  - **Mở rộng (Tất cả Part):** Tính năng xương sống của quá trình mở rộng vốn từ vựng TOEIC.
+### 3.4 Tiêu chí nghiệm thu (Acceptance Criteria)
+1. Ở trang làm bài có audio, bấm Space phát/tạm dừng ngay, không cần click audio trước.
+2. Ở trang review có audio, bấm ArrowRight tua +5s, ArrowLeft tua -5s.
+3. Khi con trỏ ở textarea ghi chú, phím tắt audio không tự kích hoạt.
+4. Không phát sinh lỗi JS trên console khi audio chưa load xong hoặc không có audio.
 
 ---
 
-## Tóm tắt Lộ trình Đề xuất (Roadmap)
+## 4. Feature B - Flashcard Đa Năng Từ Nội Dung Chọn
 
-**Giai đoạn 2 (Ngay sau Phase 1 hiện tại): Tập trung vào Review Experience**
-1. Xây dựng Data Model cho Timestamp (Mỗi `Question` hoặc `Choice` lưu `audio_start_time`, `audio_end_time`).
-2. Tích hợp UI Audio Player có khả năng tua đến chính xác Timestamp.
-3. Ra mắt tính năng **Interactive Transcript** (Click chữ phát âm thanh).
+### 4.1 Mục tiêu học tập
+Cho phép người học biến lỗi sai, từ vựng mới, cụm từ hay gặp thành bộ ôn tập lặp lại (spaced repetition) ngay trong app.
 
-**Giai đoạn 3: Phân tích sâu & Cá nhân hóa**
-1. Bổ sung `Error Tagging` vào hệ thống (Người dùng tự tag lỗi tại sao họ sai).
-2. Tách từ vựng từ `explanation_html` thành các Entity độc lập (`VocabularyCard`).
-3. View tổng hợp (Analytics): Điểm yếu của tôi nằm ở dạng bẫy nào? (Dạng biểu đồ Spider Chart).
+### 4.2 User Story
+1. Là người học, tôi muốn bôi đen từ/cụm từ trong review để thêm nhanh vào flashcard.
+2. Là người học, tôi muốn quản lý flashcard theo deck/chủ đề (Part, tag, đề thi).
+3. Là người học, tôi muốn ôn tập flashcard định kỳ và đánh dấu mức độ nhớ.
 
-**Giai đoạn 4: Reading & Highlight**
-1. Mở rộng UI cho Part 7 (Passages dọc bên trái, Questions dọc bên phải).
-2. Tính năng Highlight Text để gạch chân dẫn chứng.
-3. Liên kết màu sắc giữa Câu hỏi và Dẫn chứng trong bài đọc.
+### 4.3 Nguồn tạo flashcard
+Tạo từ các bối cảnh sau:
+- Prompt câu hỏi.
+- Nội dung lựa chọn đáp án.
+- Explanation.
+- Ghi chú cá nhân.
+
+Phạm vi áp dụng: Part 1 đến Part 7.
+
+### 4.4 Trường dữ liệu flashcard
+Mỗi flashcard tối thiểu gồm:
+- id
+- term (bắt buộc)
+- meaning (cho phép rỗng lúc tạo nhanh)
+- example (tùy chọn)
+- source_type: question_prompt | choice | explanation | note | manual
+- source_ref: exam_id, question_id, part (nếu có)
+- tags (csv hoặc bảng quan hệ)
+- deck_name (default: "Default")
+- created_at, updated_at
+
+Trường cho học lặp lại:
+- next_review_at
+- interval_days
+- ease_factor
+- repetition
+- last_result: again | hard | good | easy
+
+### 4.5 API đề xuất (mức MVP + mở rộng)
+MVP:
+- POST /flashcards
+- GET /flashcards
+- PATCH /flashcards/{id}
+- DELETE /flashcards/{id}
+
+Review flow:
+- POST /flashcards/{id}/review
+- GET /flashcards/review/due
+
+Khuyến nghị bổ sung:
+- POST /flashcards/from-selection
+	- Input: selected_text, context_html(optional), exam_id, question_id, part, source_type, tags
+
+### 4.6 Trải nghiệm UI bắt buộc
+1. Trong trang Review:
+	- User bôi đen text, hiện mini action "Thêm flashcard".
+	- Click mở modal tạo nhanh (term điền sẵn từ vùng đã chọn).
+2. Trang Flashcard:
+	- Danh sách thẻ, tìm kiếm, filter theo deck/tag/part.
+	- Chế độ ôn tập theo thẻ đến hạn.
+3. Trong Review card:
+	- Có nút "+ Flashcard" tại khu vực explanation/note nếu không muốn bôi đen.
+
+### 4.7 Thuật toán ôn tập (khuyến nghị)
+Sử dụng SM-2 rút gọn:
+- Again: interval về 0-1 ngày.
+- Hard: tăng nhẹ interval.
+- Good: tăng chuẩn theo ease_factor.
+- Easy: tăng mạnh hơn.
+
+MVP có thể dùng bản đơn giản theo số ngày cố định, sau đó nâng cấp dần.
+
+### 4.8 Tiêu chí nghiệm thu (Acceptance Criteria)
+1. User có thể tạo flashcard từ text được bôi đen trong review trong <= 3 thao tác.
+2. Flashcard lưu đúng liên kết nguồn (exam/question/part) nếu có.
+3. User có thể xem danh sách flashcard và lọc theo ít nhất 1 chiều (tag hoặc deck).
+4. User hoàn thành phiên ôn tập và hệ thống cập nhật next_review_at.
+5. Không ảnh hưởng chức năng note/bookmark cũ.
 
 ---
-Bản đề xuất này sử dụng chung một tư duy lõi: **"Chia nhỏ dữ liệu rời rạc (Audio/Text/Image) thành các đoạn tương tác vi mô (Micro-interactions)"** để tối đa hóa hiệu suất học, tránh tình trạng đọc giải thích tĩnh thụ động truyền thống.
+
+## 5. Phi chức năng và an toàn dữ liệu
+- Không thay đổi schema cũ theo kiểu phá hủy.
+- Migration DB phải backward compatible.
+- Giữ tốc độ phản hồi API hiện có; không để import hoặc review bị chậm rõ rệt.
+- Escape/XSS-safe khi lưu và render nội dung text tự do.
+
+## 6. Kế hoạch triển khai theo pha
+
+### Pha 1 (nhanh, ít rủi ro)
+- Bổ sung audio shortcut toàn cục.
+- Bổ sung UI hint phím tắt.
+- Thêm test tương tác cơ bản cho shortcut.
+
+### Pha 2 (Flashcard MVP)
+- Tạo bảng flashcards + CRUD API.
+- Nút "Thêm flashcard" ở review (manual + selected text).
+- Trang danh sách flashcard cơ bản.
+
+### Pha 3 (Flashcard học lặp lại)
+- Logic due cards + review result.
+- Dashboard nhỏ: số thẻ đến hạn, tỷ lệ nhớ.
+
+## 7. Định nghĩa hoàn thành Part 1 (Definition of Done)
+1. Không regression ở import, attempt, submit, review, note, bookmark.
+2. Đạt toàn bộ acceptance criteria của Feature A và Feature B.
+3. Có hướng dẫn sử dụng ngắn cho người học trong UI hoặc docs.
+4. Có test cho logic backend mới và luồng chính frontend.
+
+## 8. Chỉ dẫn thực thi cho Agent
+Khi agent thực thi Part 1, làm theo thứ tự:
+1. Rà điểm móc hiện tại ở UI/route/API để thêm mà không phá code cũ.
+2. Làm Feature A trước (ít phụ thuộc).
+3. Tạo schema/API flashcard theo MVP.
+4. Gắn UI review -> create flashcard.
+5. Bổ sung review scheduler (nếu làm Pha 3).
+6. Chạy test, tự kiểm tra hiệu năng và lỗi JS.
+
+Quy tắc ưu tiên:
+- Ưu tiên ổn định production.
+- Ưu tiên thao tác nhanh cho người học.
+- Ưu tiên thiết kế dữ liệu đủ mở rộng cho Part 1-7 lâu dài.
