@@ -180,49 +180,79 @@ function renderFlashcardStudyPanel(filters) {
             <span class="flashcard-summary-pill">${dueCount} thẻ</span>
         </div>
         <div class="study-progress-row">
-            <span class="study-progress-text">Thẻ ${flashcardsState.studyIndex + 1} / ${dueCount}</span>
-            <span class="study-progress-text">${progress}%</span>
+            <div class="study-session-stat">
+                <span class="study-session-label">Tiến độ phiên học</span>
+                <strong>Thẻ ${flashcardsState.studyIndex + 1} / ${dueCount}</strong>
+            </div>
+            <div class="study-hotkeys" aria-label="Tương tác lật thẻ">
+                <span class="study-hotkey-pill">Click</span>
+                <span class="study-hotkey-pill">Enter</span>
+                <span class="study-hotkey-pill">Space</span>
+            </div>
         </div>
         <div class="study-progress-bar" aria-hidden="true">
             <span style="width:${progress}%"></span>
         </div>
-        <button id="study-card-toggle" type="button"
-            class="study-card-shell ${flashcardsState.studyRevealed ? 'revealed' : ''}"
-            aria-pressed="${flashcardsState.studyRevealed}"
-            aria-label="${flashcardsState.studyRevealed ? 'Lật về mặt trước flashcard' : 'Lật sang mặt sau flashcard'}"
-            onclick="toggleStudyCardReveal()">
-            <span class="study-card-scene">
-                <span class="study-card-face study-card-front">
-                    <span class="study-card-face-meta">Mặt trước</span>
-                    <span class="study-card-term">${escapeHtml(currentCard.term)}</span>
-                    <span class="study-card-hint">Click, Enter hoặc Space để lật thẻ</span>
+        <div class="study-card-stack">
+            <span class="study-card-layer study-card-layer-back" aria-hidden="true"></span>
+            <span class="study-card-layer study-card-layer-mid" aria-hidden="true"></span>
+            <button id="study-card-toggle" type="button"
+                class="study-card-shell ${flashcardsState.studyRevealed ? 'revealed' : ''}"
+                aria-pressed="${flashcardsState.studyRevealed}"
+                aria-label="${flashcardsState.studyRevealed ? 'Lật về mặt trước flashcard' : 'Lật sang mặt sau flashcard'}"
+                onclick="toggleStudyCardReveal()">
+                <span class="study-card-scene">
+                    <span class="study-card-face study-card-front">
+                        <span class="study-card-face-top">
+                            <span class="study-card-face-meta">Mặt trước</span>
+                            <span class="study-card-flip-pill">${escapeHtml(currentCard.deck_name || 'Default')}</span>
+                        </span>
+                        <span class="study-card-front-content">
+                            <span class="study-card-kicker">Tự nhớ nghĩa trước khi lật</span>
+                            <span class="study-card-term">${escapeHtml(currentCard.term)}</span>
+                            <span class="study-card-front-prompt">Nhấn để kiểm tra xem bạn còn nhớ từ này không.</span>
+                        </span>
+                        <span class="study-card-hint">Click, Enter hoặc Space để lật thẻ</span>
+                    </span>
+                    <span class="study-card-face study-card-back">
+                        <span class="study-card-face-top">
+                            <span class="study-card-face-meta">Mặt sau</span>
+                            <span class="study-card-flip-pill is-answer">Đáp án</span>
+                        </span>
+                        <span class="study-card-back-layout">
+                            <span class="study-card-back-primary">
+                                <span class="study-card-back-label">Meaning</span>
+                                <span class="study-card-back-value">${escapeHtml(currentCard.meaning || 'Chưa có nghĩa cho thẻ này')}</span>
+                            </span>
+                            <span class="study-card-back-secondary">
+                                <span class="study-card-back-label">Example</span>
+                                <span class="study-card-back-quote">${escapeHtml(currentCard.example || 'Chưa có ví dụ minh họa')}</span>
+                            </span>
+                        </span>
+                        <span class="study-card-meta-cluster">
+                            ${renderStudyMetaChips(currentCard)}
+                        </span>
+                    </span>
                 </span>
-                <span class="study-card-face study-card-back">
-                    <span class="study-card-face-meta">Mặt sau</span>
-                    <span class="study-card-back-block">
-                        <strong>Meaning</strong>
-                        <span>${escapeHtml(currentCard.meaning || 'Chưa có')}</span>
-                    </span>
-                    <span class="study-card-back-block">
-                        <strong>Example</strong>
-                        <span>${escapeHtml(currentCard.example || 'Chưa có')}</span>
-                    </span>
-                    <span class="study-card-back-block">
-                        <strong>Tags</strong>
-                        <span>${renderCompactTags(currentCard.tags)}</span>
-                    </span>
-                    <span class="study-card-back-block">
-                        <strong>Nguồn</strong>
-                        <span>${escapeHtml(buildFlashcardSourceText(currentCard))}</span>
-                    </span>
-                </span>
-            </span>
-        </button>
+            </button>
+        </div>
         <div class="study-actions">
-            <button class="btn btn-ghost btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('again')">Again</button>
-            <button class="btn btn-ghost btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('hard')">Hard</button>
-            <button class="btn btn-primary btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('good')">Good</button>
-            <button class="btn btn-primary btn-sm study-rating-btn" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('easy')">Easy</button>
+            <button class="btn btn-ghost btn-sm study-rating-btn is-again" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('again')">
+                <span>Again</span>
+                <small>Học lại ngay</small>
+            </button>
+            <button class="btn btn-ghost btn-sm study-rating-btn is-hard" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('hard')">
+                <span>Hard</span>
+                <small>Còn mơ hồ</small>
+            </button>
+            <button class="btn btn-primary btn-sm study-rating-btn is-good" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('good')">
+                <span>Good</span>
+                <small>Nhớ được</small>
+            </button>
+            <button class="btn btn-primary btn-sm study-rating-btn is-easy" ${flashcardsState.studyRevealed ? '' : 'disabled'} onclick="rateCurrentFlashcard('easy')">
+                <span>Easy</span>
+                <small>Quá dễ</small>
+            </button>
         </div>
     `;
 
@@ -258,6 +288,31 @@ function renderEmptyStudyPanel(filters) {
 function renderCompactTags(tags) {
     if (!tags || tags.length === 0) return 'Chưa gắn tag';
     return tags.map((tag) => `#${escapeHtml(tag)}`).join(' • ');
+}
+
+function renderStudyMetaChips(card) {
+    const chips = [];
+    const tags = (card.tags || []).slice(0, 4);
+
+    tags.forEach((tag) => {
+        chips.push(`<span class="study-meta-chip">#${escapeHtml(tag)}</span>`);
+    });
+
+    if (card.source_type || card.sourceType) {
+        chips.push(`<span class="study-meta-chip is-source">${escapeHtml(formatFlashcardSourceType(card.source_type || card.sourceType))}</span>`);
+    }
+    if (card.part) {
+        chips.push(`<span class="study-meta-chip">Part ${card.part}</span>`);
+    }
+    if (card.question_id) {
+        chips.push(`<span class="study-meta-chip">Q${card.question_id}</span>`);
+    }
+
+    if (chips.length === 0) {
+        chips.push('<span class="study-meta-chip is-source">Thẻ tạo thủ công</span>');
+    }
+
+    return chips.join('');
 }
 
 function renderFlashcardList() {
@@ -385,6 +440,14 @@ function buildFlashcardSourceText(card) {
     if (card.part) parts.push(`Part ${card.part}`);
     if (card.question_id) parts.push(`Q${card.question_id}`);
     return parts.join(' • ');
+}
+
+function formatFlashcardSourceType(sourceType) {
+    return String(sourceType || 'manual')
+        .split('_')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
 }
 
 function formatFlashcardDate(value) {
